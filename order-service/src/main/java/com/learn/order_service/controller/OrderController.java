@@ -4,6 +4,7 @@ import com.learn.order_service.client.ProductClient;
 import com.learn.order_service.client.ProductResponse;
 import com.learn.order_service.model.Order;
 import com.learn.order_service.repository.OrderRepository;
+import com.learn.order_service.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,17 +20,14 @@ public class OrderController {
     @Autowired
     private ProductClient productClient;
 
+    @Autowired
+    private OrderService orderService;
+
     @PostMapping
     public ResponseEntity<Order> placeOrder(@RequestParam Long productId,@RequestParam Integer quantity){
-        ProductResponse product=productClient.getProductById(productId);
-
-        Order order=new Order();
-        order.setProductId(productId);
-        order.setQuantity(quantity);
-        order.setTotalPrice(product.getPrice()*quantity);
-        order.setStatus("PLACED");
-
-        return  ResponseEntity.status(HttpStatus.CREATED).body(orderRepo.save(order));
+        Order order=orderService.placeOrder(productId,quantity);
+        HttpStatus status="FAILED".equals(order.getStatus())?HttpStatus.SERVICE_UNAVAILABLE:HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(order);
     }
 
     @GetMapping("/{id}")
